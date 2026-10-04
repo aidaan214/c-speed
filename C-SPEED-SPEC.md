@@ -1,11 +1,11 @@
 # C Speed (working name) — Design Specification
 
-**Status:** Initial proposal, version 0.1  
+**Status:** Language design proposal; interpreter prototype 2.00  
 **Purpose:** A compiled programming language aimed at extremely demanding, compute-intensive software: large-scale data analysis, AI, scientific and rocket/aerospace calculations, and high-graphics games.
 
-![C Speed icon](./assets/c-speed-icon.jpeg)
+![C Speed icon](./c-speed-icon.jpeg)
 
-The first working prototype supports page text, color classes, and basic `f64` math expressions, and runs them in a standalone Windows application window. HTML is an optional export. This is a learning milestone, not yet the planned optimizing native compiler.
+The Windows interpreter prototype supports page text, color classes, `f64`/`bool`, math, functions, relative source imports, conditionals, and bounded loops. It runs programs in a standalone application window, with optional HTML export. The repository also includes a small Windows code editor in `Cspeed idle` that opens, saves, syntax-colors, and runs `.csp` files through the C Speed interpreter. These are learning milestones, not yet the planned optimizing native compiler or a full-featured IDE.
 
 ## 1. Design goals
 
