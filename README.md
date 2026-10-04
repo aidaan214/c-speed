@@ -1,8 +1,28 @@
-# C Speed 2.00
+# C Speed 
 
 C Speed is an early language project aimed at high-performance data analysis, AI, rocket and aerospace calculations, scientific computing, and graphics-heavy games. Version 2.00 expands the interpreter with source imports, functions, booleans, comparisons, conditionals, and loops.
 
 [Open the beginner's guide](./LEARN.md) for runnable syntax examples and an explanation of what the current prototype supports versus what is still planned.
+
+## C Speed IDLE editor
+
+The `Cspeed idle` folder contains a small Windows code editor for writing `.csp` programs. It includes syntax coloring, line numbers, file open/save, and a Run button (or **F5**). Running a file saves it first and launches that program with the C Speed interpreter; the program output appears in its normal C Speed window.
+
+To open the standalone Windows x64 editor, double-click [`Cspeed idle\C Speed IDLE.exe`](./Cspeed%20idle/C%20Speed%20IDLE.exe). It includes the .NET runtime and does not need a separate .NET installation. To build it again, follow the instructions in [`Cspeed idle\README.md`](./Cspeed%20idle/README.md).
+
+To build and open the editor from the repository folder:
+
+```powershell
+dotnet run --project ".\Cspeed idle\CspeedIdle.csproj"
+```
+
+Open an existing source file from the editor's File menu, or pass a file path when launching:
+
+```powershell
+dotnet run --project ".\Cspeed idle\CspeedIdle.csproj" -- ".\examples\control-flow.csp"
+```
+
+The editor uses the C Speed compiler project from this repository when available. When launched separately, it looks for the per-user C Speed installation or the `c-speed` command on PATH. Install the interpreter command with `c-speed.exe --install-command` if it cannot be found.
 
 ## Download
 
@@ -20,7 +40,7 @@ Open a new terminal afterward, `cd` to the folder containing your C Speed progra
 
 ## Run a C Speed program in its own window
 
-The C Speed 2.00 interpreter understands page text, named color classes, `f64`/`bool` variables, math expressions, functions, control flow, loops, and relative `.csp` imports. Running a `.csp` file opens a standalone Windows app window with the C Speed logo and the output written by the program. It does not create an HTML file unless you explicitly request HTML export.
+The C Speed 2.00 interpreter understands page text, named color classes, `f64`/`bool` variables, math expressions, functions, control flow, loops, and relative `.csp` imports. Running a `.csp` file opens a standalone Windows app window showing the output written by the program. The C Speed icon identifies the app but is not added to your page. It does not create an HTML file unless you explicitly request HTML export.
 
 1. Install the .NET 8 SDK to build and run from source. The published `.exe` needs the .NET 8 Windows Desktop Runtime.
 2. Open PowerShell in the folder containing your `.csp` file:
@@ -141,7 +161,7 @@ Open `compiler\Cspeed\CspeedInterpreter.cs` while following these stages:
 3. **Parse statements:** It builds structured statements for declarations, functions, conditionals, loops, and output.
 4. **Evaluate expressions:** A precedence-aware parser checks arithmetic, comparison, and boolean expressions. The `**` operator is right-associative.
 5. **Execute:** The interpreter checks variable types and mutability, invokes user functions, runs bounded loops, and collects page output.
-6. **Display output:** The app opens a separate C Speed window with the logo and program output. HTML export is optional.
+6. **Display output:** The app opens a separate C Speed window with the program output. HTML export is optional.
 
 This is an **interpreter prototype**, not the eventual optimizing native compiler. It does not yet support arrays, string variables, `for each`, ownership checks, AI libraries, or GPU code. We will add language features in small steps and later replace the prototype backend with native code generation.
 
