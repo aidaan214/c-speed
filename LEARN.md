@@ -1,8 +1,8 @@
-# Learn C Speed
+# Learn C Speed 2.00
 
-Welcome! This guide teaches you how to write and run programs using the **current C Speed prototype**.
+Welcome! This guide teaches you how to write and run programs using the **C Speed 2.00 interpreter prototype**.
 
-> **Important:** C Speed is still being built. The current program runner can display text and the C Speed logo in its own Windows window, apply named text colors, store and change numeric variables, and calculate `f64` math expressions. It is an interpreter prototype, not yet the planned high-performance native compiler. The language examples about files, AI, graphics, and native speed later in this guide describe ideas to build toward; they are **not executable in this version**.
+> **Important:** C Speed is still being built. Version 2.00 adds source imports, functions, `bool`, comparisons, `if`/`else`, `while`, counted `range` loops, `break`, and `continue`, alongside text/color output and `f64` math. It is an interpreter prototype, not the planned high-performance native compiler. AI, graphics, GPU, general data-file access, and native-speed examples describe future goals; they are **not executable features yet**.
 
 ## 1. Create and run your first program
 
@@ -71,14 +71,14 @@ for page include (distance)
 
 This calculates `600` and displays it. `f64` means a 64-bit floating-point number, which can represent integers and decimal numbers.
 
-The `: f64` type can be omitted because this prototype currently supports only `f64` numeric variables:
+The `: f64` type can be omitted when the initializer is numeric:
 
 ```text
 let distance = 300.0 * 2.0
 for page include (distance)
 ```
 
-Variable names start with a letter or underscore and can then use letters, numbers, or underscores. Names are case-sensitive. A variable must be defined before an expression uses it, and cannot be defined twice in one program.
+Variable names start with a letter or underscore and can then use letters, numbers, or underscores. Names are case-sensitive. A variable must be defined before an expression uses it, and cannot be defined twice in the same scope.
 
 Variables are immutable by default. Use `let mut` if a value needs to change, then update it using `set`:
 
@@ -88,7 +88,7 @@ set total = total + 5.0
 for page include (total)
 ```
 
-Changing a regular `let` variable is an error. Variables currently store numeric values only; storing text or collections is not supported yet.
+Changing a regular `let` variable is an error. Variables can currently store `f64` numbers and `bool` values; text is still display-only, and arrays/collections are not implemented.
 
 ## 4. Do calculations
 
@@ -219,21 +219,27 @@ Comments on a line that already has code are not supported yet.
 
 ## 8. Use other files
 
-### What works now
+### Import another C Speed source file
 
-The current runner reads one `.csp` source file each time you start it:
+Put reusable function declarations in another `.csp` file. For example, `helpers.csp`:
 
-```powershell
-cspeed main.csp
+```text
+function square(value: f64) -> f64:
+    return value * value
 ```
 
-You can put the `.csp` file in any folder you can access and give the runner its path:
+Import it from `main.csp` using your chosen syntax:
 
-```powershell
-cspeed "C:\MyCspeed\main.csp"
+```text
+import helpers.csp
+
+let answer = square(5)
+for page include (answer)
 ```
 
-Each `.csp` program is currently interpreted on its own. C Speed does **not** yet have `import`, module, or `include` statements for loading another source file, and its programs cannot yet read or write arbitrary data files.
+Run `main.csp` from its folder as usual. Each import path is relative to the importing `.csp` file, so nested imports resolve relative to the file that contains that import. Imports must be `.csp` files, cannot be absolute paths, and are loaded once. Missing files and circular imports report errors. Imported top-level statements are included and executed as part of the program; use imported files primarily for reusable function definitions.
+
+Importing source code is not the same as arbitrary file I/O. C Speed still cannot read or write data files from inside a program.
 
 ### What file support might look like later
 
@@ -275,19 +281,71 @@ For now, you can use C Speed to experiment with its supported math and display f
 
 ## 10. What is not supported yet
 
-The following examples appear in the wider design discussion, but are **not implemented in the runner yet**:
+### Imports
 
-- User-defined `function` declarations and `return`.
-- `if` / `else` decisions.
-- `for each` and other loops.
-- Arrays, collections, and string variables.
+```text
+import helpers.csp
+```
+
+Import paths are relative to the source file containing the import. Imports must refer to `.csp` files, and absolute paths are rejected. Nested imports work; the same file is loaded only once, while import cycles and missing files produce errors. Imported functions can be called by name. Top-level statements in imported files also run, so reusable modules should generally contain declarations.
+
+### Functions and return values
+
+```text
+function square(value: f64) -> f64:
+    return value * value
+
+let result = square(6)
+for page include (result)
+```
+
+Function definitions must be top-level. Parameters may be annotated `f64` or `bool`; return annotations may be `f64` or `bool`. Arguments are positional and must match the parameter count. Functions may call other functions and themselves. A function call must reach a `return`; otherwise C Speed reports an error. Functions can read global values, but they run with their own local variable scope and cannot update caller variables or globals.
+
+### Booleans, comparisons, and decisions
+
+```text
+let mut temperature: f64 = 20
+let is_safe: bool = temperature >= 0 and temperature <= 100
+
+if is_safe:
+    for page include ("Within the example range")
+else if temperature < 0:
+    for page include ("Below the example range")
+else:
+    for page include ("Above the example range")
+```
+
+Comparisons are `==`, `!=`, `<`, `<=`, `>`, and `>=`. `and`, `or`, and `not` work with booleans, and `and`/`or` short-circuit. Conditions must evaluate to a boolean. A numeric truthy/falsy condition such as `if 1:` is not accepted.
+
+### Loops
+
+```text
+let mut total: f64 = 0
+for index in range(1, 5):
+    set total = total + index
+
+let mut countdown: f64 = 3
+while countdown > 0:
+    for page include (countdown)
+    set countdown = countdown - 1
+```
+
+`range(end)` counts from zero up to but not including `end`; `range(start, end)` chooses a start; and `range(start, end, step)` supports a positive or negative nonzero step. `while` reevaluates its boolean condition before every iteration. `break` exits the nearest loop and `continue` starts its next iteration. Each program is limited to one million loop iterations overall and functions are limited to 256 nested calls, to keep accidental infinite loops/recursion from running forever. `for each` is not supported because collection values are not implemented yet.
+
+### Types and current limitations
+
+Only `f64` and `bool` are implemented as variable types. Strings are still display-only; functions cannot yet accept/return string values. Arrays and collections are not available, so `for each` and AI/data workflows are still future work.
+
+The following major features are **not implemented in the runner yet**:
+
+- Arrays, collections, `for each`, and string variables/operations.
 - Reading or writing data files from a program.
-- Importing other `.csp` modules.
-- Network requests, package libraries, and third-party code.
+- Network requests from `.csp`, package libraries, and third-party code. The separate `cspeed https server [port]` command only serves local static website files.
+- Classes as user-defined object types, structs, enums, pointers, ownership/borrowing, and generics.
 - AI, machine-learning, graphics, or GPU programming APIs.
 - Native code generation and C++-comparable performance.
 
-If you try unsupported syntax, C Speed will report an error rather than execute it. These features should be implemented one by one with tests and examples.
+The function/condition/loop syntax described in this guide is now executable. Other future-design examples are still only proposals. Unsupported syntax reports an error rather than being silently ignored.
 
 ## 11. Optional HTML export
 
@@ -426,7 +484,7 @@ for page include ("text") = class 'name'
 for page include (numeric_expression) = class 'name'
 ```
 
-The literal words `class`, `color`, `let`, `mut`, `set`, `for`, `page`, `include`, and `math` have special roles in these forms. Parentheses group the value passed to `include` or a math function. Double quotes identify page text; single quotes identify class names. A class definition has a following, indented color line.
+The words `class`, `color`, `let`, `mut`, `set`, `function`, `return`, `if`, `else`, `while`, `for`, `in`, `range`, `break`, `continue`, `and`, `or`, `not`, `true`, `false`, `page`, `include`, and `math` have special roles. `import` loads a `.csp` file before the source is parsed. Parentheses group expressions and function arguments. Double quotes identify page text; single quotes identify color-class names. A class definition has a following, indented color line.
 
 ### Whitespace and lines
 
@@ -435,18 +493,28 @@ The literal words `class`, `color`, `let`, `mut`, `set`, `for`, `page`, `include
 - A line whose first non-space characters are `//` is a comment and does nothing.
 - Leading/trailing whitespace is removed before matching normal statements.
 - The color line is the exception: it must include indentation after the class declaration.
-- Statements are processed top to bottom. A numeric variable has to exist before the line that uses it.
-- A style can be used before its declaration because the program checks class references after processing all lines.
+- Executed statements run in order, subject to function calls, branches, and loops. A variable has to exist before the executed statement that uses it.
+- Function declarations are registered before the program executes, so a function can be called before its definition in the source.
+- Imports and style declarations are processed before execution; styles can be used before their declaration.
 
-### Names
+### Names and booleans
 
 A variable name must start with an ASCII letter or underscore (`A`-`Z`, `a`-`z`, `_`). The rest of the name can use letters, digits, and underscores. Thus `distance2` and `_count` are valid examples, while `2distance` and `my-distance` are not variable names.
 
-Variable names are case-sensitive: `speed` and `Speed` are different names. A variable cannot be declared twice in one program. Class names can contain spaces and are written in single quotes; their spelling and case must match between the class definition and each assignment.
+Variable names are case-sensitive: `speed` and `Speed` are different names. A variable cannot be declared twice in one scope. Class names can contain spaces and are written in single quotes; their spelling and case must match between the class definition and each assignment.
+
+Boolean values are `true` and `false`. The current value types are `f64` and `bool`:
+
+```text
+let is_ready: bool = true
+let has_error = false
+```
+
+Type annotations must match the initializer and later assignments.
 
 ### Numeric type and number notation
 
-All variables and math results in this prototype are .NET `double` values, which correspond to the common 64-bit floating-point idea represented by the proposed `f64` type. Writing `: f64` is permitted but optional. Writing a different explicit type such as `i32` causes a clear error because other types have not been implemented.
+Numeric variables and math results are .NET `double` values, corresponding to the 64-bit floating-point idea represented by `f64`. Writing `: f64` is permitted but optional for numeric values. Other numeric types such as `i32` are not implemented.
 
 Numbers can be whole or decimal:
 
@@ -461,7 +529,7 @@ The last two examples use scientific notation: `2.5e-4` means `2.5 × 10⁻⁴`;
 
 ## 17. Math expressions in detail
 
-The expression parser recognizes number literals, variable names, math function calls, `math.pi`, `math.e`, parentheses, commas, decimal points, and the supported arithmetic operators. Spaces inside a calculation do not matter.
+The expression parser recognizes number and boolean literals, variable names, user-defined function calls, math function calls, `math.pi`, `math.e`, parentheses, commas, decimal points, arithmetic operators, comparisons, and boolean operators. Spaces inside a calculation do not matter.
 
 These expressions are supported:
 
@@ -472,6 +540,8 @@ These expressions are supported:
 math.pow(2, 8)
 math.sqrt(16)
 math.min(10, 20)
+2 + 3 >= 5 and not false
+true or (1 / 0 == 0)
 2.5e-3 * 4
 ```
 
@@ -481,8 +551,11 @@ The current parser uses these operator precedence levels:
 
 1. Parenthesized expressions and function arguments are calculated first.
 2. Power (`**`) is next and groups right to left.
-3. Multiplication (`*`), division (`/`), and remainder (`%`) are next.
-4. Addition (`+`) and subtraction (`-`) are last.
+3. Multiplication (`*`), division (`/`), and remainder (`%`) follow.
+4. Addition (`+`) and subtraction (`-`) come next.
+5. Ordering comparisons (`<`, `<=`, `>`, `>=`) produce booleans.
+6. Equality (`==`, `!=`) checks two values of the same type.
+7. `not`, `and`, and `or` operate on booleans; `and` and `or` short-circuit.
 
 Unary `+` and `-` bind before multiplication but after power in the current parser. So:
 
@@ -517,7 +590,7 @@ for page include ("Temperature:")
 for page include (temperature)
 ```
 
-The runner converts numeric output using invariant formatting, so it uses a dot for the decimal separator regardless of the computer's regional settings.
+The runner formats numeric output invariantly, so it uses a dot for the decimal separator regardless of the computer's regional settings. Boolean output is written as `true` or `false`.
 
 To put a quote or backslash inside displayed text, escape it:
 
@@ -575,7 +648,7 @@ The result is `7`. `set` does not create a new variable: `total` must have been 
 
 ### Can I use variables before I create them?
 
-No. Numeric statements run top to bottom:
+No. Executed statements run in order, and each variable must be defined before an expression uses it:
 
 ```text
 let a = b + 1
@@ -626,12 +699,11 @@ The following are examples of **future syntax only**. They will fail in today's 
 ```text
 let text = file.read_text("notes.txt")
 let data = csv.read("measurements.csv")
-let helper = import "helpers.csp"
 ```
 
-Before adding file I/O, C Speed needs a carefully designed library for opening, reading, and closing files; handling path errors and permissions; selecting text encoding; and representing bytes, text, and records. For scientific datasets, we will also need efficient formats, validation, and clear errors when the data is malformed. Loading a file should not silently hide failures or unexpectedly consume excessive memory.
+Before adding file I/O, C Speed needs a carefully designed library for opening, reading, and closing data files; handling path errors and permissions; selecting text encoding; and representing bytes, text, and records. For scientific datasets, we will also need efficient formats, validation, and clear errors when the data is malformed. Loading a file should not silently hide failures or unexpectedly consume excessive memory.
 
-“Connect to different files” can also mean sharing code among source files. This is usually handled by modules or imports; a future module system needs rules for how imports are found, how duplicate names are handled, and how each file participates in compilation. There is no module/import support yet.
+“Connect to different files” can also mean sharing code among source files. Basic relative `.csp` imports are implemented as described in section 8. Export visibility, module namespaces, package management, and complete module build rules are still future work.
 
 ## 22. AI: what it takes and what you can learn now
 
@@ -700,12 +772,12 @@ Even after a native compiler exists, speed must be measured with representative 
 
 ## 24. Common errors and how to fix them
 
-The current executable is a Windows GUI app. During normal window mode, an error is shown in a Windows message box, including the `.csp` path and line number when available. The optional HTML-export/console modes write errors to the terminal instead.
+The current executable opens a Windows GUI for a normal program run. During window mode, an error is shown in a Windows message box, including the `.csp` path and line number when available. The optional HTML-export/console modes write errors to the terminal instead.
 
 | Error | Typical reason | What to do |
 |---|---|---|
-| `Unrecognized statement` | The line uses syntax not implemented yet, or has a typo. | Check the supported grammar and capitalization; functions, `if`, and loops are not implemented. |
-| `Unknown variable or math function` | The name was not defined, has a typo, or a math name lacks the `math.` prefix. | Check spelling/case and define the value before use. |
+| `Unrecognized statement` | The line uses unsupported syntax or has a typo. | Check the examples in this guide; `for each`, arrays, and arbitrary file APIs are still unsupported. |
+| `Unknown variable` / `Unknown function` | The name was not defined, has a typo, or a math name lacks the `math.` prefix. | Check spelling/case, import the module that defines the function, and define values before use. |
 | `Variable ... already defined` | The program declares the same name twice with `let`. | Use a fresh name; for mutable values, update using `set`. |
 | `Variable ... is immutable` | `set` was used on a plain `let` variable. | Declare that variable with `let mut`. |
 | `has not been defined` for a class | The class name in the `= class` part has no matching declaration. | Match the name exactly, including spaces and capitalization. |
@@ -752,7 +824,7 @@ Build and run the focused smoke tests from the repository folder:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\compiler\tests\SmokeTests.ps1
 ```
 
-The smoke tests verify numeric precedence and functions, mutable variables, color use, safe HTML text export, selected errors, and that normal app mode does not create an HTML file.
+The smoke tests verify numeric precedence, user functions, booleans/comparisons, branches, loops, imports, mutable variables, colors, safe HTML export, selected errors, and the local HTTPS static server.
 
 ## 26. Tiny glossary
 
@@ -763,13 +835,13 @@ The smoke tests verify numeric precedence and functions, mutable variables, colo
 | **Statement** | One instruction, such as `let x = 3` or `for page include ("Hi")`. |
 | **Variable** | A named place for a value, such as `distance`. |
 | **Expression** | A calculation that produces a value, such as `speed * time`. |
-| **Type** | The kind of value, such as the planned `f64` number type. |
+| **Type** | The kind of value; the current interpreter supports `f64` and `bool`. |
 | **Parser** | The part of a language tool that reads text and recognizes its grammar. |
 | **Interpreter** | A program that reads source instructions and runs them without first compiling them to native code. |
 | **Compiler** | A program that translates source into another form, often native machine instructions. |
 | **Runtime** | Support code and services available while a program runs. |
 | **Library** | Reusable functions and data structures a program can call. |
-| **Module/import** | A planned way for one source file to reuse code from another file. |
+| **Module/import** | An `.csp` source file loaded using `import relative-name.csp`. |
 | **Tensor** | A multi-dimensional numeric collection commonly used in AI and scientific computing. |
 | **Training** | Adjusting a model's parameters from examples to reduce its prediction error. |
 | **Inference** | Using an already-trained model to calculate an output for new input. |
@@ -777,14 +849,13 @@ The smoke tests verify numeric precedence and functions, mutable variables, colo
 
 ## 27. What to learn next
 
-Use the current features to get comfortable with source files, variables, expressions, and output. Then a sensible order for building the language is:
+Use the current features to get comfortable with source files, variables, expressions, functions, and output. Then a sensible order for building the language further is:
 
-1. Add comparisons and `if`/`else` with tests.
-2. Add functions and function parameters.
-3. Add arrays and loops for collections of values.
-4. Add structured diagnostics and documented number semantics.
-5. Add safe file reading and writing with explicit errors.
-6. Add imports/modules and a package/build workflow.
+1. Add arrays and loops for collections of values, including `for each`.
+2. Add string variables and string operations.
+3. Add structured diagnostics and documented numeric semantics.
+4. Add safe data-file reading and writing with explicit errors.
+5. Add module exports, package management, and a build workflow.
 7. Add vector/matrix math and benchmarks for data workloads.
 8. Add native library interoperability and CPU parallelism.
 9. Explore GPU support and AI libraries.
@@ -913,17 +984,17 @@ There are several layers between a terminal command and the visible result:
 1. **PowerShell locates `cspeed`.** Windows searches directories listed on PATH for a matching executable. The per-user installation puts `cspeed.exe` and `c-speed.exe` in `%LOCALAPPDATA%\C-Speed`.
 2. **The operating system starts the app.** The executable is a Windows desktop application built on .NET Windows Forms. The logo is included inside the executable, so it does not need to find the logo next to your `.csp` file.
 3. **The command-line argument is passed in.** `main.csp` tells C Speed which source file to read. The current folder is where PowerShell looks for that relative path.
-4. **C Speed resolves and reads the file.** It converts the source path to a full path and reads its lines.
-5. **The statement parser does a source pass.** It examines each nonempty, non-comment line and recognizes one of the supported statement forms.
-6. **Numbers are evaluated immediately.** Variable declarations and updates are calculated as their lines are reached; values are stored in a dictionary under variable names.
-7. **Text output is collected.** Each `for page include` becomes an item containing displayed text and, if requested, a color.
-8. **Class references are checked.** Once all lines have been read, every named style used by output must exist.
+4. **The interpreter loads imports.** Relative `.csp` modules are read, duplicate imports are skipped, and cycles/missing paths produce errors.
+5. **The statement parser reads the program structure.** It registers function declarations and builds blocks for conditionals and loops.
+6. **Statements execute.** Expressions are evaluated when reached; functions get local variables, branches/loops get block scopes, and mutable outer values are updated from their blocks.
+7. **Text output is collected.** Each executed `for page include` becomes an item containing displayed text and, if requested, a color.
+8. **Class references are checked.** Every executed output style must exist.
 9. **The GUI is constructed.** `CSpeedWindow` adds the embedded logo, creates one text label for each output item, and applies each item's color.
 10. **The event loop keeps the window open.** The app remains alive until you close the window. This is what makes it behave like a separate desktop program instead of immediately closing after printing text.
 
 ### Why output statements do not show up while parsing
 
-The current prototype collects page text and displays it after the whole program is compiled/interpreted. It is not a live window being updated one statement at a time. That makes it possible to catch class names used before their declaration, but it also means a long calculation blocks until interpretation finishes. There are no loops in the current grammar, so programs cannot yet express that sort of long-running computation.
+The current interpreter collects page text and displays it after the whole program finishes interpreting. It is not a live window being updated one statement at a time. A long calculation blocks until interpretation finishes; loops are available, but the total number of iterations is capped.
 
 ### How a math expression is read
 
@@ -1117,13 +1188,256 @@ math.pow(x, y)
 ### Not working yet
 
 ```text
-function ...
-if ... else ...
-for each ...
+for each item in items:
+    ...
 file.read_text(...)
-import ...
 ai.create_model(...)
 gpu.run(...)
 ```
 
-These last forms are reminders of future goals only, not statements that the current compiler understands.
+These are reminders of future goals only; functions, conditionals, loops, and relative source imports are supported in C Speed 2.00 as described earlier.
+
+## 36. Local HTTPS server for HTML, CSS, and JavaScript
+
+The C Speed **command-line app** can serve an existing static website from the terminal. This command is separate from the `.csp` language:
+
+```powershell
+cd "C:\MyWebsite"
+cspeed https server
+```
+
+Open `https://localhost:8443/` in a browser. The server uses `index.html` for the folder home page. You can select a different port:
+
+```powershell
+cspeed https server 9443
+```
+
+It serves files from the terminal's current directory, binds only to `127.0.0.1`, accepts `GET` and `HEAD`, and stops when you press **Ctrl+C**. It does not list directory contents, run server-side code, or let a `.csp` program make network requests.
+
+Each start generates a temporary self-signed TLS certificate. The browser warning that the certificate is not trusted is expected; this tool is for local development and is not suitable for public hosting or sensitive data. It does not install the certificate as trusted. Use `cspeed https server --help` for server usage details.
+
+## 37. Full feature backlog: what the language still needs
+
+This checklist expands the feature comparison pasted into the project. Unchecked items remain future language/library capabilities; the items explicitly marked implemented are available in C Speed 2.00. The comparisons to Python and C++ show the kinds of jobs those features solve; they are not proposals to copy either language's syntax exactly. The list is a practical inventory, not an exhaustive count of every feature in either language.
+
+The current `.csp` language is much smaller than the desktop app around it. The host app can open an output window, export HTML, associate `.csp` files with Windows, and run a separate local static HTTPS server. Those host commands do **not** mean a `.csp` program can create GUI controls, read/write arbitrary data files, or use networking. C Speed 2.00 also has relative source imports, functions, `f64` and `bool` values, arithmetic/comparison/boolean expressions, conditionals, bounded `while`/`range` loops, and `break`/`continue`.
+
+### 37.1 Output, variables, and basic syntax
+
+**Implemented:** `for page include ("text")`, numeric output such as `for page include (answer)`, optional named text color, `let`, `let mut`, and `set`.
+
+- [ ] Console `print`/`println`, standard input, standard error, and configurable output streams from `.csp`.
+- [ ] Combining literal text and values in one formatted output, interpolation, format strings, and raw/multiline string literals.
+- [ ] Multiple assignment, tuple unpacking, swapping, chained assignment, compound assignment (`+=`), increment/decrement, and deleting or shadowing names.
+- [ ] Constants, static variables, and complete exported module-scope rules.
+- [ ] A `main()` entry point, command-line arguments for programs, and process exit codes.
+- [ ] Formal grammar/versioning, consistent indentation rules, and source spans for precise diagnostics.
+
+### 37.2 Data types and type system
+
+**Implemented:** numeric variables use `f64`, boolean variables use `bool`, and annotations are optional when a value's type is inferred. Strings are display literals, not values that can be assigned to variables. The `class` keyword defines a text-color style, not a programming-language class.
+
+- [ ] Integer and unsigned types (`i8` through `i64`, `u8` through `u64`), characters, byte values, and string variables.
+- [x] Boolean values (`bool`) and `true`/`false` literals.
+- [ ] Arrays, fixed-size arrays, slices, tuples, structs, enums, tagged unions, and user-defined classes/objects.
+- [ ] References, pointers, null/optional values, and explicit lifetime/ownership rules.
+- [ ] Type conversions/casts, type aliases, richer inference, and clear compile-time type checking.
+- [ ] Generic types and functions, interfaces/traits, and constraints on generic code.
+- [ ] Constructors, fields, methods, properties, static members, inheritance, dynamic dispatch, and operator overloading, if the language chooses an object-oriented model.
+- [ ] A documented distinction between value and reference semantics, mutability, and numeric overflow behavior.
+
+### 37.3 Operators and expressions
+
+**Implemented:** `+`, `-`, `*`, `/`, `%`, `**`, unary `+`/`-`, parentheses, comparisons, `and`/`or`/`not`, and short-circuit boolean evaluation.
+
+- [x] Equality and ordering comparisons: `==`, `!=`, `<`, `>`, `<=`, `>=`.
+- [x] Boolean operators `and`/`or`/`not` with short-circuit evaluation.
+- [ ] Bitwise operators, shifts, and integer-specific arithmetic.
+- [ ] Floor division, compound assignments, and a conditional/ternary expression.
+- [ ] Null-coalescing, membership, identity, and matrix multiplication operators, if they fit the final type model.
+- [ ] Operator overloading and user-defined conversion rules.
+- [ ] Defined rules for overflow, NaN/infinity, signed zero, division, and equality for floating-point values.
+
+### 37.4 Decisions, loops, and flow control
+
+- [x] `if`, `else if`, and `else`, including nested conditions.
+- [x] `while` loops and counted `for ... in range(...)` loops with positive or negative steps.
+- [x] `break` and `continue`; each process is capped at 1,000,000 loop iterations.
+- [ ] `do...while`, collection iteration (`for each`), and labeled loop control.
+- [ ] `switch`/`match`/`case` pattern matching and a default branch.
+- [x] `return` from user-defined functions.
+- [ ] `yield`, `await`, and asynchronous control flow.
+- [ ] Assertions, and structured exception raising/catching where appropriate.
+- [ ] Comprehensions and lazy generator expressions, if adopted.
+- [x] Basic runtime safeguards: a one-million-iteration process-wide loop limit.
+- [ ] Configurable resource limits and predictable behavior for all long-running programs.
+
+### 37.5 Functions and reusable code
+
+- [x] Top-level user-defined functions, local/block scopes, positional `f64`/`bool` parameters, return values, recursion, and a 256-call depth cap.
+- [ ] Closely specified lexical scopes, nested functions, closure capture, and mutation of caller/global values.
+- [ ] Default and named arguments, variadic parameters, overloads, and function signatures.
+- [ ] Lambdas/anonymous functions, closures, nested functions, and functions as values.
+- [ ] Higher-order operations such as `map`, `filter`, and `reduce`.
+- [ ] Generators, asynchronous functions, coroutines, and callback conventions.
+- [ ] Function pointers/callables, partial application, decorators/attributes, and reflection where justified.
+- [ ] A clear distinction between built-in math functions and user-defined functions.
+
+### 37.6 Strings, characters, and text
+
+**Implemented:** quoted text can be displayed, with `\"`, `\\`, `\n`, `\r`, and `\t` escapes. HTML export escapes text before placing it in a page.
+
+- [ ] String values, concatenation, repetition, interpolation, formatting, comparison, and length.
+- [ ] Character indexing, slicing, iteration, searching, and containment.
+- [ ] Case conversion, trimming, splitting, joining, replacing, prefix/suffix tests, and reversing.
+- [ ] Unicode-aware text operations and documented character/grapheme semantics.
+- [ ] Encoding/decoding, byte strings, ordinal conversions, and explicit invalid-encoding behavior.
+- [ ] Regular expressions and safe limits for potentially expensive patterns.
+
+### 37.7 Collections and iteration
+
+- [ ] Lists/vectors, fixed arrays, resizable arrays, and indexed access.
+- [ ] Maps/dictionaries, sets, tuples, queues, deques, heaps, and ordered collections.
+- [ ] Insert, append, remove, pop, sort, reverse, slice, lookup, and iteration APIs.
+- [ ] `enumerate`, `zip`, `any`, `all`, `sum`, and collection-aware `min`/`max`.
+- [ ] Iterators, generators, lazy/eager evaluation rules, and mutation-during-iteration rules.
+- [ ] Comprehensions and common collection utilities.
+
+### 37.8 Files, paths, and data formats
+
+- [x] Relative `.csp` source imports, including nested imports; duplicate files load once and cycles/missing imports are errors.
+- [ ] Read/write/append file APIs; line-based and binary I/O; stream and resource lifetimes.
+- [ ] File existence, rename, delete, directories, directory traversal, path joining, and temporary files.
+- [ ] Explicit encodings, permissions, error reporting, and configurable sandbox/capability boundaries.
+- [ ] CSV, JSON, XML, TOML, and other structured-data libraries with validation and size limits.
+- [ ] Binary serialization formats and schema/version handling.
+- [ ] Exported names, module namespaces, package/module search rules, dependency resolution, and a package manager.
+- [ ] A package manager, lockfile, dependency integrity checks, and a standard-library versioning policy.
+
+### 37.9 Errors, diagnostics, logging, and debugging
+
+**Implemented:** syntax/runtime errors in a `.csp` program are reported by the runner; desktop-mode errors use a dialog. There are no language-level `try`/`catch` constructs.
+
+- [ ] Structured errors/exceptions, custom error types, `try`/`catch`/`finally`, and explicit propagation.
+- [ ] Result/optional types or another typed approach for recoverable failures.
+- [ ] Assertions, warnings, deprecation markers, and user-configurable logging.
+- [ ] Stack traces, source maps, debugger breakpoints/stepping, and variable inspection.
+- [ ] A dedicated test runner, unit-test framework, mocks/fixtures, coverage, fuzzing, and benchmark tooling.
+- [ ] Stable diagnostic codes, helpful source locations, and consistent errors across interpreter/compiler modes.
+
+### 37.10 Math, numbers, statistics, and scientific computing
+
+**Implemented:** scalar `f64` arithmetic; `math.sqrt`, `abs`, `floor`, `ceil`, `round`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `log`, `log10`, `exp`, `min`, `max`, and `pow`; plus `math.pi` and `math.e`.
+
+- [ ] Hyperbolic functions, `atan2`, `log2`, `hypot`, `fmod`, `trunc`, `copysign`, `isnan`, `isinf`, and explicit infinity/NaN constants.
+- [ ] Integer math such as GCD/LCM, factorial, combinations/permutations, exact integers, and overflow-safe operations.
+- [ ] Random-number generation with explicit seeds and reproducibility guarantees.
+- [ ] Complex, decimal, rational, arbitrary-precision, and unit-aware numeric types.
+- [ ] Statistics, distributions, sampling, and numerical error/precision analysis.
+- [ ] Vectors/matrices, dot/cross products, linear algebra, matrix factorizations, and sparse arrays.
+- [ ] FFTs, convolution, interpolation, optimization, integration, ODE/PDE solvers, and signal processing.
+- [ ] Scientific-data formats and tools such as HDF5, NetCDF, Parquet, data frames, plotting, mesh processing, and finite-element workflows.
+- [ ] Verified numerical libraries and accuracy/performance benchmarks before claiming suitability for aerospace calculations.
+
+### 37.11 Time, operating system, and processes
+
+- [ ] Current time/date, parsing/formatting, durations, time zones, calendars, timers, and sleep.
+- [ ] Environment variables, process identity, platform information, home/temp directories, and path conventions.
+- [ ] Process creation/management, exit status, signals, and command-line argument parsing.
+- [ ] OS-specific APIs behind portable interfaces and capability-based permissions.
+
+### 37.12 Concurrency and memory model
+
+- [ ] Threads/tasks, processes, async I/O, thread pools, futures, queues, and cancellation.
+- [ ] Locks, mutexes, semaphores, conditions, barriers, atomics, and memory-order rules.
+- [ ] Parallel algorithms, data-race diagnostics, and a clear model for safe shared mutable state.
+- [ ] A specified runtime memory model, stack/heap behavior, allocation controls, and profiling tools.
+- [ ] Ownership/borrowing or another sound approach to lifetimes and resource cleanup.
+- [ ] Smart pointers or garbage collection only if chosen as explicit language/runtime design features; the .NET interpreter's own memory management does not define C Speed's future native memory model.
+- [ ] Allocators, alignment, move semantics, and low-level memory access only with safety rules and clear use cases.
+
+### 37.13 Networking, web, and databases
+
+- [ ] In-language HTTP client, URL parsing, DNS, TCP/UDP sockets, TLS clients, WebSockets, and timeouts.
+- [ ] Dynamic web-server routes, request/response APIs, forms, cookies, sessions, authentication, and JSON APIs.
+- [ ] Database drivers, queries, transactions, migrations, connection pools, and safe parameterized statements.
+- [ ] REST/gRPC/GraphQL integrations and documented network permission/security policies.
+- [ ] Static website hosting configuration, production-grade certificates, deployment, logging, and hardening.
+
+The `cspeed https server [port]` command is a small **host-app development utility** for local static files, not any of the language APIs above. It binds to loopback and uses a temporary self-signed certificate; it is not a production web server.
+
+### 37.14 Security, serialization, and compression
+
+- [ ] Cryptographic hashes, HMAC, random bytes, UUIDs, and vetted encryption APIs.
+- [ ] Secure key/certificate storage and password hashing; never invent custom cryptography.
+- [ ] Base64/hex, JSON/XML/TOML/CSV and binary encoding/decoding with schema validation.
+- [ ] ZIP/TAR/GZIP/BZIP2/LZMA/Zstandard support and decompression limits.
+- [ ] Safe defaults for untrusted input, path traversal, resource exhaustion, and dependency supply chains.
+
+### 37.15 Images, audio, video, GUI, and games
+
+**Implemented outside the language:** the host opens a resizable Windows output window with the logo and text labels. Color applies to text labels. This is not a general UI or game API.
+
+- [ ] Buttons, text inputs, checkboxes, menus, sliders, dialogs, file pickers, tabs, tables, and event handlers.
+- [ ] Layout, fonts, background styling, clipboard, notifications, drag-and-drop, and accessibility.
+- [ ] Canvas/2D drawing, image loading/editing, audio playback, video, screen capture, and asset pipelines.
+- [ ] Game loops, input handling, animation, 3D rendering, graphics APIs, and GPU resource management.
+- [ ] Cross-platform GUI support and a deliberate choice between native widgets and a web-based UI model.
+
+### 37.16 AI, machine learning, and accelerators
+
+**Implemented:** no AI/ML feature. Scalar `f64` math is not an AI system.
+
+- [ ] Arrays/tensors, matrix kernels, data loading, data cleaning, and dataset abstractions.
+- [ ] Models/layers, activations, losses, optimizers, training loops, prediction, evaluation, and checkpoint save/load.
+- [ ] CPU vectorization, multi-threaded kernels, GPU backends, device discovery, memory transfer, and supported-driver policy.
+- [ ] Tokenizers, embeddings, attention, CNN/RNN/transformer operations, pretrained-model integration, and inference runtimes.
+- [ ] Reproducibility, numerical validation, model/data formats, resource limits, and licensing/privacy review for data and models.
+- [ ] Bindings to mature libraries (for example ONNX Runtime or established ML stacks) before attempting to recreate every model ecosystem.
+
+A dedicated GPU is **not required** to use today's C Speed prototype or its static website server. A strong CPU or GPU is a goal for future demanding AI/graphics workloads, not a current language requirement. A CPU model label alone does not guarantee performance; benchmark the actual program and hardware.
+
+### 37.17 Interoperability, metaprogramming, and compiler design
+
+- [ ] C ABI/FFI, calling native libraries, generated bindings, and explicit ownership at language boundaries.
+- [ ] Macros, compile-time evaluation, reflection, code generation, and plugin/extension APIs.
+- [ ] A real compiler pipeline with parsing, typed intermediate representation, optimization, machine-code/native output, and reliable diagnostics.
+- [ ] A defined application binary interface, linking, debug symbols, and release/debug build profiles.
+- [ ] Ahead-of-time or JIT compilation only after the language semantics and test suite are stable.
+
+The current `c-speed.exe` runs the interpreter and Windows host app; it does **not** compile `.csp` programs to native machine code or currently provide C++-comparable performance.
+
+### 37.18 Python- and C++-style capabilities to evaluate
+
+The pasted comparison also called out language-specific conveniences. These are optional design choices, not a requirement to implement Python or C++ wholesale:
+
+- [ ] Python-like comprehensions, unpacking, f-strings, decorators, context managers, match patterns, generators, and batteries-included modules.
+- [ ] Common container/tooling concepts such as ordered/default dictionaries, counters, deques, heaps, iterator utilities, and function utilities.
+- [ ] C++-like templates/generics, RAII, move semantics, constexpr evaluation, concepts, ranges, structured bindings, and compile-time checks.
+- [ ] C++-like optional/variant/tuple/array/span/string-view abstractions, filesystem, chrono, regex, threads, atomics, futures, and formatted output.
+- [ ] A consistent C Speed design for each selected idea; syntax and semantics should be documented and tested rather than copied mechanically.
+
+### 37.19 Tooling, distribution, and ecosystem
+
+**Implemented:** a Windows runner, per-user command/file-association installation, README/LEARN docs, a sample, and PowerShell smoke tests. GitHub Releases hosting and the repository-specific download link still need to be configured when publishing.
+
+- [ ] VS Code syntax highlighting, completion, diagnostics, formatting, navigation, and debugger support.
+- [ ] Cross-platform builds/installers, versioning, changelog, licensing, signed releases, and update policy.
+- [ ] Automated CI builds/tests, compatibility tests, package publishing, and reproducible builds.
+- [ ] Language specification, standard library reference, migration guide, tutorials, examples, and community contribution rules.
+- [ ] Internationalization: Unicode identifiers policy, locale-independent number rules, localized diagnostics, and date/number formatting APIs.
+
+### 37.20 Suggested order for building the language
+
+This is a suggested dependency order, not a promise or a fixed schedule:
+
+1. **Language foundation:** lexer/parser, diagnostics, booleans, comparisons, scope, and tests.
+2. **Control flow:** `if`/`else`, loops, `break`/`continue`, and defined execution limits.
+3. **Functions:** parameters, return values, local scope, and recursion.
+4. **Useful data:** strings, integers, arrays, and maps, with carefully specified mutation and type rules.
+5. **I/O and composition:** console input/output, safe file access, modules, and package/dependency design.
+6. **Errors and tooling:** structured errors, test runner, formatter, editor support, and debugger hooks.
+7. **Performance foundation:** benchmarks, typed intermediate representation, native-code strategy, profiling, and optimization.
+8. **Specialized libraries:** scientific computing, AI/ML, graphics, GPU, networking, and database support as separate measured projects.
+
+Do not implement every box at once. Choose one feature, write down its syntax and behavior, add tests (including failure cases), update this guide, and only then build the next feature on it.
