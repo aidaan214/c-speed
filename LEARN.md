@@ -21,7 +21,7 @@ cd "C:\MyCspeed"
 cspeed main.csp
 ```
 
-This opens a C Speed window, displays the program's output with the C Speed logo, and exits when you close the window. You can also double-click a `.csp` file if Windows file associations have been set up.
+This opens a C Speed window and displays the program's output without adding the C Speed logo to your page. The C Speed app and `.csp` file can still use the C Speed icon. The window closes when you close it. You can also double-click a `.csp` file if Windows file associations have been set up.
 
 If the `cspeed` command is not recognized, open a **new** terminal after installing C Speed. You can run using the full path to `c-speed.exe`, or run from the project source with the .NET SDK:
 
@@ -361,7 +361,7 @@ This creates `main.html` in the same folder. To choose a different path:
 cspeed main.csp --html "C:\MyCspeed\result.html"
 ```
 
-The HTML export includes the C Speed logo, and HTML-escapes text so page text is displayed safely.
+The HTML export displays only your page output and HTML-escapes text so it is displayed safely.
 
 ## 12. Troubleshooting
 
@@ -383,7 +383,7 @@ The starter implementation is in `compiler\Cspeed\`:
 2. The page compiler recognizes statements and stores variables and style declarations.
 3. The numeric-expression parser turns math text into tokens and applies operator precedence.
 4. The interpreter validates references and calculates values.
-5. The Windows app creates controls to show the logo and program output.
+5. The Windows app creates controls to show the program output.
 
 An interpreter reads and runs source instructions. A native compiler, which is a later C Speed goal, translates source into machine code before the program runs. A file named `c-speed.exe` is currently the **C Speed interpreter app**—it does not yet compile `.csp` programs to native code.
 
@@ -426,7 +426,7 @@ Here is what each part does:
 8. `x ** 2` squares `x`; `y ** 2` squares `y`; `+` adds the squares; and `math.sqrt(...)` takes the square root. For `x = 3` and `y = 4`, this calculates `sqrt(9 + 16)`, which is `5`.
 9. `for page include (distance)` displays the calculated number instead of quoted text.
 
-When you run this file, the interpreter reads and validates it first. The C Speed window opens after processing the complete program; it contains the logo followed by the output items in the same order as their `for page include` statements.
+When you run this file, the interpreter reads and validates it first. The C Speed window opens after processing the complete program; it contains the output items in the same order as their `for page include` statements.
 
 ## 15. Build your own example from scratch
 
@@ -629,7 +629,7 @@ Accepted lengths are:
 - `#RRGGBB`, six hexadecimal digits.
 - `#RRGGBBAA`, eight hexadecimal digits, with the final pair controlling alpha.
 
-Only digits `0`-`9` and letters `a`-`f` / `A`-`F` are accepted. For short colors, each digit is expanded by repeating it: `#f08` becomes `#ff0088`. The class style applies to individual output items, not to the logo or the whole program window.
+Only digits `0`-`9` and letters `a`-`f` / `A`-`F` are accepted. For short colors, each digit is expanded by repeating it: `#f08` becomes `#ff0088`. The class style applies to individual output items, not the whole program window.
 
 ## 20. Variables: common questions
 
@@ -878,7 +878,7 @@ for page include ("Hello from C Speed!")
 - `"Hello from C Speed!"` is a text literal. Double quotes tell C Speed not to treat its contents as a variable or calculation.
 - `)` ends the value.
 - There is no semicolon. One source line is one statement.
-- When the statement is interpreted, a text item is added to the program output. When all source lines are processed, the desktop UI shows that text below the built-in logo.
+- When the statement is interpreted, a text item is added to the program output. When all source lines are processed, the desktop UI shows that text without adding a logo to the page.
 
 ### Styled-text program
 
@@ -982,14 +982,14 @@ cspeed main.csp --html "C:\MyCspeed\output.html"
 There are several layers between a terminal command and the visible result:
 
 1. **PowerShell locates `cspeed`.** Windows searches directories listed on PATH for a matching executable. The per-user installation puts `cspeed.exe` and `c-speed.exe` in `%LOCALAPPDATA%\C-Speed`.
-2. **The operating system starts the app.** The executable is a Windows desktop application built on .NET Windows Forms. The logo is included inside the executable, so it does not need to find the logo next to your `.csp` file.
+2. **The operating system starts the app.** The executable is a Windows desktop application built on .NET Windows Forms. The app icon is embedded in the executable and does not need to find an icon next to your `.csp` file.
 3. **The command-line argument is passed in.** `main.csp` tells C Speed which source file to read. The current folder is where PowerShell looks for that relative path.
 4. **The interpreter loads imports.** Relative `.csp` modules are read, duplicate imports are skipped, and cycles/missing paths produce errors.
 5. **The statement parser reads the program structure.** It registers function declarations and builds blocks for conditionals and loops.
 6. **Statements execute.** Expressions are evaluated when reached; functions get local variables, branches/loops get block scopes, and mutable outer values are updated from their blocks.
 7. **Text output is collected.** Each executed `for page include` becomes an item containing displayed text and, if requested, a color.
 8. **Class references are checked.** Every executed output style must exist.
-9. **The GUI is constructed.** `CSpeedWindow` adds the embedded logo, creates one text label for each output item, and applies each item's color.
+9. **The GUI is constructed.** `CSpeedWindow` creates one text label for each output item and applies each item's color.
 10. **The event loop keeps the window open.** The app remains alive until you close the window. This is what makes it behave like a separate desktop program instead of immediately closing after printing text.
 
 ### Why output statements do not show up while parsing
@@ -1376,7 +1376,7 @@ The `cspeed https server [port]` command is a small **host-app development utili
 
 ### 37.15 Images, audio, video, GUI, and games
 
-**Implemented outside the language:** the host opens a resizable Windows output window with the logo and text labels. Color applies to text labels. This is not a general UI or game API.
+**Implemented outside the language:** the host opens a resizable Windows output window with text labels. Color applies to text labels. The C Speed logo remains the app/file icon but is not added to page output. This is not a general UI or game API.
 
 - [ ] Buttons, text inputs, checkboxes, menus, sliders, dialogs, file pickers, tabs, tables, and event handlers.
 - [ ] Layout, fonts, background styling, clipboard, notifications, drag-and-drop, and accessibility.
