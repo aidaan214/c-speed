@@ -44,39 +44,32 @@ for page include ("hello") = class 'hello snippet'
 
 The class declaration defines the style named `hello snippet`; the output statement assigns `hello` to that class. Without a class assignment, included text is black by default. `#f245` is an example color value; the accepted color formats and exact class grammar still need to be defined. The exact meaning of “page” and how programs provide that output (for example, a browser page or another display) still needs to be defined as the runtime takes shape.
 
-### Proposed general-purpose syntax
+### General-purpose syntax implemented in C Speed 2.00
 
-The following forms are a starting proposal for writing calculations and application logic. They are not finalized language rules:
+The current interpreter implements the subset below for calculations and application logic. Arrays and `for each` are still proposals and are not executable:
 
 ```text
-function distance(x: f64, y: f64) -> f64:
-    let squared = x ** 2 + y ** 2
-    return math.sqrt(squared)
+import helpers.csp
 
-let result = distance(3.0, 4.0)
+function square(value: f64) -> f64:
+    return value * value
 
-if result >= 5.0:
-    for page include ("Distance is at least five")
+let result = square(5)
+let positive: bool = result > 0
 
-function travel_distance(speed: f64, time: f64) -> f64:
-    return speed * time
-
-let speed: f64 = 300.0
-let time: f64 = 2.0
-let total: f64 = travel_distance(speed, time)
-
-if total > 500.0:
-    for page include ("That is fast!")
+if positive and result == 25:
+    for page include ("The result is positive")
 else:
-    for page include ("Ready")
+    for page include ("Check the result")
 
-let samples: array<f64> = [1.5, 2.0, 3.25]
-let mut sample_total: f64 = 0.0
-for each sample in samples:
-    set sample_total = sample_total + sample
+let mut total: f64 = 0
+for index in range(1, 4):
+    set total = total + square(index)
 ```
 
-Proposed basics: `let` creates a named value, types may be written after a name, `let mut` marks a value that can change, and `set` updates it. `function` defines reusable code, `if`/`else` choose a path, and `for each` visits collection items. A function can return a value. Expressions should feel familiar to Python users: arithmetic operators (`+`, `-`, `*`, `/`, `%`, and proposed `**` for powers), comparisons, parentheses, and a standard `math` library with functions such as `sqrt`. Unlike Python, C Speed is intended to use static types and ahead-of-time native compilation rather than dynamic interpretation. Blocks are grouped by indentation; semicolons and braces are not required. These choices aim to keep everyday code simple while allowing explicit types for performance-sensitive work.
+`let` creates a value, `let mut` allows it to change using `set`, `function` declares reusable code, and `return` returns a value. `if`/`else if`/`else`, `while`, and `for ... in range(...)` control execution. Current value types are `f64` and `bool`. Expressions support arithmetic, comparisons, and short-circuit boolean operators. Blocks use indentation; semicolons and braces are not required. The `.csp` implementation remains an interpreter; ahead-of-time native compilation is a design goal, not a current feature.
+
+The implemented `import helpers.csp` form loads a relative `.csp` source file next to the importing file; nested relative imports work and each file is loaded once. Missing files and circular imports are errors. Imported top-level statements execute with the main program. A formal public-export system, module namespaces, and package management remain undecided.
 
 ## 4. Core language features
 
@@ -122,8 +115,8 @@ Proposed basics: `let` creates a named value, types may be written after a name,
 ## 6. Initial implementation roadmap
 
 1. **Specify the core:** Finalize syntax, types, integer overflow/conversion rules, ownership rules, and module boundaries.
-2. **Build the learning prototype:** Interpret page text, classes, variables, and basic `f64` math; display output in a standalone window, support optional HTML export, and test diagnostics.
-3. **Build the native compiler:** Parse and type-check functions, structs, basic control flow, and calls; emit native code through a selected backend.
+2. **Build the learning prototype:** Interpret page text, classes, variables, `f64`/`bool` math, functions, imports, basic control flow, and bounded loops; display output in a standalone window, support optional HTML export, and test diagnostics.
+3. **Build the native compiler:** Parse and statically type-check functions, structs, control flow, and calls; emit native code through a selected backend.
 4. **Add memory safety:** Implement ownership/borrowing checks and test both accepted and rejected programs.
 5. **Create the standard library:** Add strings, collections, file I/O, errors, and basic threading without hiding costly behavior.
 6. **Measure and optimize:** Establish benchmarks for numeric loops, allocation, startup, and FFI before claiming performance.
@@ -136,6 +129,7 @@ Proposed basics: `let` creates a named value, types may be written after a name,
 - Integer overflow defaults and checked-arithmetic syntax.
 - Exact arithmetic operator rules, including the proposed `**` exponentiation operator, and math-library precision guarantees.
 - The details of ownership, lifetimes, and allocator APIs.
+- Complete module/package behavior: exported names, module namespaces, package lookup, and dependency management.
 - Supported operating systems and CPU architectures for the first release.
 - Which GPU APIs or graphics libraries to target, and when.
 - Package manager, build system, debugger, formatter, and test tooling.
