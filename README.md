@@ -1,4 +1,4 @@
-=# C Speed
+# C Speed
 
 C Speed is an early programming language project aimed at high-performance data analysis, AI applications, rocket and aerospace calculations, scientific computing, and graphics-heavy games.
 
@@ -28,4 +28,4 @@ To use C Speed IDLE, download the latest Windows release from the [GitHub Releas
 After downloading, open:
 
 ```text
-CSpeed.exe
+C Speed IDLE.exe
